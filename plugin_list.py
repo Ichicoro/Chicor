@@ -1,0 +1,1 @@
+plugins = [ 'hello_plugin' ]
