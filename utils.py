@@ -2,7 +2,7 @@ import threading, json
 
 # Pretty-prints a string with equal signs
 def pprint(s):
-    print(f"{"="*len(s)}\n{s}\n{"="*len(s)}")
+    print(f"{'='*len(s)}\n{s}\n{'='*len(s)}")
 
 
 def generate_config_file():
