@@ -1,4 +1,4 @@
-import threading
+import threading, json
 
 # Pretty-prints a string with equal signs
 def pprint(s):
