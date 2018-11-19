@@ -1,1 +1,0 @@
-plugins = [ 'hello_plugin' ]

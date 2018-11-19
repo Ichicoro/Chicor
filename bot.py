@@ -1,20 +1,51 @@
-import importlib, plugin_list, sys
+import importlib, sys, json, utils
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 
 class Bot:
-    def __init__(self, TOKEN):
+    def __init__(self):
         self.plugins = []
-        self.updater = Updater(TOKEN)
+        self.config = []
+        try:
+            self.config = json.load(open('config.json', 'r'));
+        except IOError:
+            utils.generate_config_file()
+            print('Configuration file (config.json) not found. Sample file has been created.')
+        
+        # Check the settings file for relevant info
+        if self.__validate_config()!=0:
+            raise ValueError
+
+        # Setup the bot
         self.__setup()
 
+
+    # This method validates a config object (read from a decoded json file)
+    def __validate_config(self):
+        try:
+            self.updater = Updater(self.config['TELEGRAM_API_TOKEN'])
+        except Exception:
+            utils.pprint('Missing API token! Write it in the config.json file')
+            return -1;
+        try:
+            self.plugin_list = self.config['plugin_list']
+        except Exception:
+            utils.pprint('Missing plugin list. Set it up in the config.json file')
+            return -1;
+        return 0;
+
+
+    def __fix_plugin_config_settings(self):
+        for plugin in self.config.plugin_list:
+            if plugin not in self.config.plugin_settings:
+                if 
 
     def start(self):
         self.updater.start_polling()
         self.updater.idle()
 
 
-    def stop(self, bot, update):
+    def stop(self):
         update.message.reply_text("Stopping bot.")
         print('stopping bot.')
         self.updater.stop()
@@ -22,7 +53,7 @@ class Bot:
 
     def __manage_plugins(self, bot, update):
         text = 'Installed plugins:'
-        for plugin in plugin_list.plugins:
+        for plugin in self.plugin_list.plugins:
             text = text + '\n- ' + plugin
         update.message.reply_text(text)
 
@@ -36,10 +67,10 @@ class Bot:
         sys.path.insert(0, './plugins')
 
         # Initialize plugins
-        for plugin in plugin_list.plugins:
+        for plugin in self.plugin_list:
             print(f'hey! now loading: {plugin}')
             self.plugins.append(getattr(importlib.import_module(plugin, "plugins"), plugin)())
-            # print(f'result: {self.plugins}')
+
         # TODO: Implement plugin checking
         self.updater.dispatcher.add_handler(MessageHandler(Filters.text, self.__on_text))
 
@@ -51,9 +82,7 @@ class Bot:
 
 
     def __on_text(self, bot, update):
-        # import pdb; pdb.set_trace()
         for plugin in self.plugins:
-            print(f"--- executing for {plugin} ---")
             try:
                 print(f"calling on_text for: {plugin}")
                 plugin.on_text(bot, update)
@@ -65,6 +94,6 @@ class Bot:
 
 
 if __name__ == '__main__':
-    bot = Bot('623741444:AAGVjDkeWiHxC6uMyH2ODDb9chfAl3Xw6AA')
+    bot = Bot()
     bot.start()
 
