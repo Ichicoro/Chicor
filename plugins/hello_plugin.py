@@ -1,21 +1,23 @@
 class hello_plugin():
     def __init__(self):
+        self.config = []
         self.commands = {
             'hello': self.hello
         }
-        self.default_settings = {
-            'test_key': "working fine here!"
+        self.default_config = {
+            'test_key': "working fine here!",
+            'times_waved': 0
         }
+        self.description = "Boopity boop. I'm a simple test plugin."
+        self.help_text = "Type /hello to receive a very special greeting from me!"
 
 
-    def test(self):
-        print('hello_plugin works fine!')
-
-
-    def hello(self, bot, update):
+    def hello(self, bot, update, args):
         update.message.reply_text(f'Hi {update.message.from_user.username}!')
+        self.config['times_waved'] += 1
 
 
     def on_text(self, bot, update):
         if 'hello' in update.message.text:
             update.message.reply_text(f"Hi! Echo: {update.message.text}")
+            self.config['times_waved'] += 1

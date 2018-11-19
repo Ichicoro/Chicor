@@ -1,4 +1,6 @@
-import importlib, sys, json, utils
+#!/usr/bin/env python3
+import importlib, sys, json, utils, logging
+from utils import set_interval
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 
@@ -6,24 +8,55 @@ class Bot:
     def __init__(self):
         self.plugins = []
         self.config = []
+        self.version = "1.0.0"
+        self.save_timer = None
+
         try:
             self.config = json.load(open('config.json', 'r'));
         except IOError:
             utils.generate_config_file()
             print('Configuration file (config.json) not found. Sample file has been created.')
-        
-        # Check the settings file for relevant info
-        if self.__validate_config()!=0:
+
+        # Check and load the settings file
+        if self.__validate_and_load_config()!=0:
             raise ValueError
 
         # Setup the bot
         self.__setup()
 
 
-    # This method validates a config object (read from a decoded json file)
-    def __validate_config(self):
+    @set_interval(10)
+    def __save_plugin_config(self):
+        for plugin in self.plugins:
+            try:
+                plugin_name = plugin.__class__.__name__
+                print(f'saving settings for {plugin_name}')
+                self.config['plugin_settings'][plugin_name] = plugin.config
+            except AttributeError:
+                print(f'wtf? No plugin.config for {plugin.__class__.__name__}')
+        self.__save_config()
+
+
+    # This method saves the config (self.config) to file (config.json)
+    def __save_config(self):
+        # print(self.config)
+        with open('config.json', 'w') as file:
+            json.dump(self.config, file, indent=4, sort_keys=True)
+
+
+    # Print plugin info to chat
+    def __print_info(self, bot, update):
+        text = "<b>Chicor</b> <i>v" + self.version + "</i>\n\n"\
+            + "Flexible, plugin-based Telegram bot written in <b>Python</b> by @Ichicoro.\n"\
+            + "<a href='https://github.com/Ichicoro/Chicor'>Fork me on GitHub!</a>"
+        update.message.reply_text(text, parse_mode='HTML', disable_web_page_preview=True)
+
+
+    # This method validates a config object (read from config.json)
+    def __validate_and_load_config(self):
         try:
-            self.updater = Updater(self.config['TELEGRAM_API_TOKEN'])
+            self.updater = Updater(self.config['TELEGRAM_API_TOKEN'],
+                user_sig_handler=self.__emergency_stop)
         except Exception:
             utils.pprint('Missing API token! Write it in the config.json file')
             return -1;
@@ -36,32 +69,73 @@ class Bot:
 
 
     def __fix_plugin_config_settings(self):
-        for plugin in self.config.plugin_list:
-            if plugin not in self.config.plugin_settings:
-                if 
+        for plugin_name in self.plugin_list:
+            if plugin_name not in self.config['plugin_settings']:
+                for plugin in self.plugins:
+                    if plugin.__class__.__name__==plugin_name:
+                        try:
+                            self.config['plugin_settings'][plugin_name] = plugin.default_config
+                        except Exception:
+                            self.config['plugin_settings'][plugin_name] = {}
+                        break
+
 
     def start(self):
         self.updater.start_polling()
         self.updater.idle()
 
 
-    def stop(self):
-        update.message.reply_text("Stopping bot.")
-        print('stopping bot.')
+    def __emergency_stop(self, signum = None, frame = None):
+        self.stop()
+
+
+    def stop(self, bot = None, update = None):
+        if bot != None and update != None:
+            update.message.reply_text("Stopping bot.")
+            print('stopping bot.')
+        self.save_timer.set()
         self.updater.stop()
 
 
-    def __manage_plugins(self, bot, update):
-        text = 'Installed plugins:'
-        for plugin in self.plugin_list.plugins:
-            text = text + '\n- ' + plugin
-        update.message.reply_text(text)
+    def __print_help(self, bot, update, args):
+        bot.send_chat_action(chat_id=update.message.chat_id, action='typing')
+        help_text = ''
+        if not len(args):
+            help_text = '<b>Chicor</b> <i>v' + self.version + "</i>\n" \
+            + "\nBuilt-in commands:" \
+            + "\n<b>/help</b>: Prints this!" \
+            + "\n<b>/info</b>: Prints information about the bot." \
+            + "\n<b>/stop</b>: Stops the bot.\n" \
+            + "\nEnabled plugins:"
+            for plugin in self.plugins:
+                help_text += '\n<b>• ' + plugin.__class__.__name__ + '</b>'
+                try:
+                    help_text += ": " + plugin.description
+                except AttributeError:
+                    pass
+        else:
+            if args[0] in self.plugin_list:
+                help_text = "<b>" + args[0] + "</b>"
+                for plugin in self.plugins:
+                    if plugin.__class__.__name__ == args[0]:     
+                        try:
+                            help_text += ": " + plugin.description
+                        except AttributeError:
+                            help_text += ": No description available."
+                        try: 
+                            help_text += "\n\n" + plugin.help_text
+                        except AttributeError:
+                            help_text += "\n\nNo help text available."
+            else:
+                help_text = "No such plugin exists."
+        update.message.reply_text(help_text, parse_mode='HTML', disable_web_page_preview=True)
 
 
     def __setup(self):
         # Setup hardcoded handlers
         self.updater.dispatcher.add_handler(CommandHandler('stop', self.stop))
-        self.updater.dispatcher.add_handler(CommandHandler('plugins', self.__manage_plugins))
+        self.updater.dispatcher.add_handler(CommandHandler('help', self.__print_help, pass_args=True))
+        self.updater.dispatcher.add_handler(CommandHandler('info', self.__print_info))
         
         # Add the plugins folder to the path list for module lookups
         sys.path.insert(0, './plugins')
@@ -69,16 +143,39 @@ class Bot:
         # Initialize plugins
         for plugin in self.plugin_list:
             print(f'hey! now loading: {plugin}')
-            self.plugins.append(getattr(importlib.import_module(plugin, "plugins"), plugin)())
+            p = getattr(importlib.import_module(plugin, "plugins"), plugin)()
+            self.plugins.append(p)
 
-        # TODO: Implement plugin checking
+        # Fix any problem in the config settings
+        self.__fix_plugin_config_settings()
+
+        # Load each plugin's config from json to each instance
+        for plugin in self.plugins:
+            plugin.config = self.config['plugin_settings'][plugin.__class__.__name__]
+            
+        for plugin in self.plugins:
+            try:
+                plugin.on_load()
+            except Exception:
+                pass
+
+        # Register message handler to self.__on_text
         self.updater.dispatcher.add_handler(MessageHandler(Filters.text, self.__on_text))
 
+
         # Register plugin handlers
+        forbidden_commands = ["stop", "help", "enable", "disable", "info"]
         for plugin in self.plugins:
             for command, function in plugin.commands.items():
                 print(command, function)
-                self.updater.dispatcher.add_handler(CommandHandler(command, function))
+                if command not in forbidden_commands:
+                    self.updater.dispatcher.add_handler(
+                        CommandHandler(command, function, pass_args=True))
+
+        # Save settings to disk
+        self.__save_config()
+
+        self.save_timer = self.__save_plugin_config()
 
 
     def __on_text(self, bot, update):
@@ -86,7 +183,7 @@ class Bot:
             try:
                 print(f"calling on_text for: {plugin}")
                 plugin.on_text(bot, update)
-            except Error:
+            except Exception:
                 print("Oops.")
         print('finished execution of __on_text')
 
@@ -94,6 +191,9 @@ class Bot:
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG,
+                    # format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+                    format='%(name)s - %(levelname)s - %(message)s')
     bot = Bot()
     bot.start()
-
+    bot.stop()
