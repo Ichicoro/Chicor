@@ -9,6 +9,7 @@ def generate_config_file():
     sample_settings = {
         "TELEGRAM_API_TOKEN": "",
         "plugin_list": [ "hello_plugin", "rule34", "lyrics" ],
+        "admin_list": [],
         "plugin_settings": []
     }
     with open('config.json', 'w') as file:
@@ -39,3 +40,8 @@ def set_interval(interval, times = -1):
             return stop
         return wrap
     return outer_wrap
+
+
+def get_admin_ids(bot, chat_id):
+    """Returns a list of admin IDs for a given chat. Results are cached for 1 hour."""
+    return [admin.user.id for admin in bot.get_chat_administrators(chat_id)]

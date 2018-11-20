@@ -9,7 +9,7 @@ class hello_plugin():
             'times_waved': 0
         }
         self.description = "Boopity boop. I'm a simple test plugin."
-        self.help_text = "Type /hello to receive a very special greeting from me!"
+        self.help_text = "Write /hello to receive a very special greeting from me!"
 
 
     def hello(self, bot, update, args):

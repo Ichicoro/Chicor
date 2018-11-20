@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import importlib, sys, json, utils, logging
-from utils import set_interval
+import importlib, sys, json, utils, logging, os
+from utils import set_interval, get_admin_ids
+from threading import Thread
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 
@@ -25,8 +26,8 @@ class Bot:
         self.__setup()
 
 
-    @set_interval(10)
-    def __save_plugin_config(self):
+    # @set_interval(10)
+    def __save_plugin_config(self, bot, job):
         for plugin in self.plugins:
             try:
                 plugin_name = plugin.__class__.__name__
@@ -68,6 +69,40 @@ class Bot:
         return 0;
 
 
+    def __enable_plugin(self, bot, update, args):
+        if str(update.message.from_user.id) not in self.config['admin_list']:
+            update.message.reply_text("You don't have enough privileges!")
+            return
+
+        if not len(args):
+            update.message.reply_text("No plugin specified!")
+            return
+
+        if importlib.util.find_spec(args[0]) is not None:
+            self.config['plugin_list'].append(args[0])
+            update.message.reply_text("Plugin enabled. Restarting bot...")
+            self.__restart()
+        else:
+            update.message.reply_text("Plugin not found.")
+
+
+    def __disable_plugin(self, bot, update, args):
+        if str(update.message.from_user.id) not in self.config['admin_list']:
+            update.message.reply_text("You don't have enough privileges!")
+            return
+
+        if not len(args):
+            update.message.reply_text("No plugin specified!")
+            return
+
+        if args[0] in self.config['plugin_list']:
+            self.config['plugin_list'].remove(args[0])
+            update.message.reply_text("Plugin disabled. Restarting bot...")
+            self.__restart()
+        else:
+            update.message.reply_text("Plugin not found.")
+
+
     def __fix_plugin_config_settings(self):
         for plugin_name in self.plugin_list:
             if plugin_name not in self.config['plugin_settings']:
@@ -91,10 +126,31 @@ class Bot:
 
     def stop(self, bot = None, update = None):
         if bot != None and update != None:
+            if str(update.message.from_user.id) not in self.config['admin_list']:
+                update.message.reply_text("You don't have enough privileges!")
+                return
             update.message.reply_text("Stopping bot.")
             print('stopping bot.')
-        self.save_timer.set()
+        #self.save_timer.set()
         self.updater.stop()
+
+
+    # RESTART BOT
+    def __stop_and_restart(self):
+        """Gracefully stop the Updater and replace the current process with a new one"""
+        self.updater.stop()
+        os.execl(sys.executable, sys.executable, *sys.argv)
+
+    def __restart(self, bot = None, update = None):
+        self.__save_config()
+        if bot is not None and update is not None:
+            bot.send_chat_action(chat_id=update.message.chat_id, action='typing')
+            if str(update.message.from_user.id) not in self.config['admin_list']:
+                print(update.message.from_user.id, "list: ", self.config['admin_list'], str(update.message.from_user.id) in self.config['admin_list'])
+                update.message.reply_text("You don't have enough privileges!")
+                return
+            update.message.reply_text('Bot is restarting...')
+        Thread(target=self.__stop_and_restart).start()
 
 
     def __print_help(self, bot, update, args):
@@ -105,7 +161,10 @@ class Bot:
             + "\nBuilt-in commands:" \
             + "\n<b>/help</b>: Prints this!" \
             + "\n<b>/info</b>: Prints information about the bot." \
-            + "\n<b>/stop</b>: Stops the bot.\n" \
+            + "\n<b>/stop</b>: Stops the bot." \
+            + "\n<b>/enable</b>: Enables plugins." \
+            + "\n<b>/disable</b>: Disables plugins." \
+            + "\n<b>/restart</b>: Restarts the bot.\n" \
             + "\nEnabled plugins:"
             for plugin in self.plugins:
                 help_text += '\n<b>• ' + plugin.__class__.__name__ + '</b>'
@@ -136,6 +195,9 @@ class Bot:
         self.updater.dispatcher.add_handler(CommandHandler('stop', self.stop))
         self.updater.dispatcher.add_handler(CommandHandler('help', self.__print_help, pass_args=True))
         self.updater.dispatcher.add_handler(CommandHandler('info', self.__print_info))
+        self.updater.dispatcher.add_handler(CommandHandler('restart', self.__restart))
+        self.updater.dispatcher.add_handler(CommandHandler('enable', self.__enable_plugin, pass_args=True))
+        self.updater.dispatcher.add_handler(CommandHandler('disable', self.__disable_plugin, pass_args=True))
         
         # Add the plugins folder to the path list for module lookups
         sys.path.insert(0, './plugins')
@@ -164,7 +226,7 @@ class Bot:
 
 
         # Register plugin handlers
-        forbidden_commands = ["stop", "help", "enable", "disable", "info"]
+        forbidden_commands = ["stop", "help", "enable", "disable", "info", "restart"]
         for plugin in self.plugins:
             for command, function in plugin.commands.items():
                 print(command, function)
@@ -175,7 +237,8 @@ class Bot:
         # Save settings to disk
         self.__save_config()
 
-        self.save_timer = self.__save_plugin_config()
+        # self.save_timer = self.__save_plugin_config()
+        self.updater.job_queue.run_repeating(self.__save_plugin_config, interval=50, first=5)
 
 
     def __on_text(self, bot, update):
