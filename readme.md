@@ -7,7 +7,7 @@ Clone the repo, install the modules and doop doop.
 
 ## How to write plugins for the bot
 ### Basic structure
-```
+```python
 class plugin_name():
     '''
     The plugin name must be the same as the filename of the module
