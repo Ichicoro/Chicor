@@ -1,4 +1,5 @@
 #Chicor
+
 Flexible, plugin-based Telegram bot written in **Python**.
 
 ## How to setup
@@ -25,7 +26,6 @@ class plugin_name():
         self.help_text = "Plugin help text"
 
 
-
     def handler1(self, bot, update, args):
         update.message.reply_text("Hello?")
 
@@ -40,3 +40,4 @@ class plugin_name():
     # There are also other handlers for other types of messages.
 ```
 
+After writing the plugin, either enable it with `/enable <plugin_name>` or by manually adding the plugin name in the `config.json`
