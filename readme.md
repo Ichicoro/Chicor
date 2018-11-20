@@ -1,4 +1,4 @@
-#Chicor
+# Chicor
 
 Flexible, plugin-based Telegram bot written in **Python**.
 
