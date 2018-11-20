@@ -12,7 +12,7 @@ class settitle():
     def titlesetter(self, bot, update, args):
         bot.send_chat_action(chat_id=update.message.chat_id, action='typing')
 
-        if update.message.from_user.id not in get_admin_ids(bot, update.message.chat_id):
+        if update.message.from_user.id not in get_admin_ids(bot, update.message.chat_id)+self.admin_list:
             update.message.reply_text("You don't have enough privileges!")
             return
 

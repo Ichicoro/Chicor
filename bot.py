@@ -146,7 +146,6 @@ class Bot:
         if bot is not None and update is not None:
             bot.send_chat_action(chat_id=update.message.chat_id, action='typing')
             if str(update.message.from_user.id) not in self.config['admin_list']:
-                print(update.message.from_user.id, "list: ", self.config['admin_list'], str(update.message.from_user.id) in self.config['admin_list'])
                 update.message.reply_text("You don't have enough privileges!")
                 return
             update.message.reply_text('Bot is restarting...')
@@ -214,6 +213,7 @@ class Bot:
         # Load each plugin's config from json to each instance
         for plugin in self.plugins:
             plugin.config = self.config['plugin_settings'][plugin.__class__.__name__]
+            plugin.admin_list = self.config['admin_list']
             
         for plugin in self.plugins:
             try:
