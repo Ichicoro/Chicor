@@ -21,7 +21,7 @@ class plugin_name():
             'command1': handler1,
             'command2': handler2
         }
-        self.default_config = {} # If this exists and it contains a dict, it's copied to the plugin config in config.json (Not required)
+        self.default_config = {} # If this exists, it's copied to the plugin config in config.json (Not required)
         self.description = "Plugin description"
         self.help_text = "Plugin help text"
 
