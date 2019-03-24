@@ -11,6 +11,8 @@ class Bot:
         self.config = []
         self.version = "1.0.0"
         self.save_timer = None
+        
+        self.__upgrade_config()
 
         try:
             # self.config = json.load(open('config.json', 'r'));
@@ -110,7 +112,7 @@ class Bot:
         for plugin_name in self.plugin_list:
             if plugin_name not in self.config['plugin_settings']:
                 for plugin in self.plugins:
-                    if plugin.__class__.__name__==plugin_name:
+                    if plugin.__class__.__name__ == plugin_name:
                         try:
                             self.config['plugin_settings'][plugin_name] = plugin.default_config
                         except Exception:
@@ -134,7 +136,6 @@ class Bot:
                 return
             update.message.reply_text("Stopping bot.")
             print('stopping bot.')
-        #self.save_timer.set()
         self.updater.stop()
 
 
@@ -153,6 +154,14 @@ class Bot:
                 return
             update.message.reply_text('Bot is restarting...')
         Thread(target=self.__stop_and_restart).start()
+
+
+    def __upgrade_config(self):
+        if os.path.exists("config.json") and not os.path.exists("config.yaml"):
+            print("Converting old config.json to config.yaml")
+            with open('config.json', 'r') as json_config:
+                with open('config.yaml', 'w') as yaml_config:
+                    yaml.dump(json.load(json_config), yaml_config)
 
 
     def __print_help(self, bot, update, args):

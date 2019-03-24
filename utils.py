@@ -1,4 +1,5 @@
-import threading, json
+import threading, json, yaml
+
 
 # Pretty-prints a string with equal signs
 def pprint(s):
@@ -12,8 +13,8 @@ def generate_config_file():
         "admin_list": [],
         "plugin_settings": []
     }
-    with open('config.json', 'w') as file:
-        json.dump(sample_settings, file, indent=4, sort_keys=True)
+    with open('config.yaml', 'w') as file:
+        yaml.dump(sample_settings, file)
 
 
 def set_interval(interval, times = -1):
