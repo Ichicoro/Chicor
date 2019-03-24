@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import importlib, sys, json, utils, logging, os
+import importlib, sys, json, utils, logging, os, yaml
 from utils import set_interval, get_admin_ids
 from threading import Thread
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
@@ -13,10 +13,12 @@ class Bot:
         self.save_timer = None
 
         try:
-            self.config = json.load(open('config.json', 'r'));
+            # self.config = json.load(open('config.json', 'r'));
+            with open('config.yaml', 'r') as f:
+                self.config = yaml.safe_load(f)
         except IOError:
             utils.generate_config_file()
-            print('Configuration file (config.json) not found. Sample file has been created.')
+            print('Configuration file (config.yaml) not found. Sample file has been created.')
 
         # Check and load the settings file
         if self.__validate_and_load_config()!=0:
@@ -41,8 +43,9 @@ class Bot:
     # This method saves the config (self.config) to file (config.json)
     def __save_config(self):
         # print(self.config)
-        with open('config.json', 'w') as file:
-            json.dump(self.config, file, indent=4, sort_keys=True)
+        with open('config.yaml', 'w') as file:
+            yaml.dump(self.config, file)
+            # json.dump(self.config, file, indent=4, sort_keys=True)
 
 
     # Print plugin info to chat

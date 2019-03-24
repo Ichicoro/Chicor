@@ -21,9 +21,12 @@ class plugin_name():
             'command1': handler1,
             'command2': handler2
         }
-        self.default_config = {} # If this exists, it's copied to the plugin config in config.json (Not required)
+        self.default_config = {} # If this exists, it's copied to the plugin config in config.yaml (Not required)
         self.description = "Plugin description"
         self.help_text = "Plugin help text"
+
+    def on_load(self):
+        print("I get called when the bot loads this plugin!")
 
 
     def handler1(self, bot, update, args):
@@ -40,4 +43,4 @@ class plugin_name():
     # There are also other handlers for other types of messages.
 ```
 
-After writing the plugin, either enable it with `/enable <plugin_name>` or by manually adding the plugin name in the `config.json`
+After writing the plugin, either enable it with `/enable <plugin_name>` or by manually adding the plugin name in the `config.yaml`
