@@ -11,8 +11,8 @@ class google_tts():
             'languages': self.print_supported_languages
         }
         self.default_config = {}    # If this exists, it's copied to the plugin config in config.yaml (Not required)
-        self.description = "Plugin description"
-        self.help_text = "Plugin help text"
+        self.description = "Speak!"
+        self.help_text = "Write /say &lt;language&gt; &lt;text&gt; to have the bot send you a voice message with the text. Write /languages to see all available languages"
 
 
     def on_load(self):
@@ -20,31 +20,20 @@ class google_tts():
 
 
     def say_handler(self, bot, update, args):
-        # if not len(args):
-        #     update.message.reply_text("This command requires arguments")
-        #     return
-        # elif len(args) == 1:
-        #     update.message.reply_text("Please :)")
-        #     return
         completed_msg = ""
         for arg in range(1, len(args)):
             print(arg)
             completed_msg += args[arg] + " "
         bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.RECORD_AUDIO)
-        
         tts_fp = BytesIO()
         try:
             tts_audio = gTTS(completed_msg, lang=args[0])
         except gTTSError:
             gtts.gTTSError.infer_msg(tts_audio)
             return
-        # tts_audio.write_to_fp(tts_fp)
         tts_audio.save("test.mp3")
-        # print(tts_fp.read())
-        # print(f.read())
         update.message.reply_voice(voice=open("test.mp3", 'rb'))
         os.remove('test.mp3')
-        
 
 
     def print_supported_languages(self, bot, update, args):
