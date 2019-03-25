@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import importlib, sys, json, utils, logging, os, yaml
+import importlib, sys, utils, logging, os, yaml
 from utils import set_interval, get_admin_ids
 from threading import Thread
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
@@ -11,7 +11,7 @@ class Bot:
         self.config = []
         self.version = "1.0.0"
         self.save_timer = None
-        
+
         self.__upgrade_config()
 
         try:
@@ -23,7 +23,7 @@ class Bot:
             print('Configuration file (config.yaml) not found. Sample file has been created.')
 
         # Check and load the settings file
-        if self.__validate_and_load_config()!=0:
+        if self.__validate_and_load_config() != 0:
             raise ValueError
 
         # Setup the bot
@@ -62,16 +62,16 @@ class Bot:
     def __validate_and_load_config(self):
         try:
             self.updater = Updater(self.config['TELEGRAM_API_TOKEN'],
-                user_sig_handler=self.__emergency_stop)
+                                   user_sig_handler=self.__emergency_stop)
         except Exception:
             utils.pprint('Missing API token! Write it in the config.json file')
-            return -1;
+            return -1
         try:
             self.plugin_list = self.config['plugin_list']
         except Exception:
             utils.pprint('Missing plugin list. Set it up in the config.json file')
-            return -1;
-        return 0;
+            return -1
+        return 0
 
 
     def __enable_plugin(self, bot, update, args):
@@ -130,7 +130,7 @@ class Bot:
 
 
     def stop(self, bot = None, update = None):
-        if bot != None and update != None:
+        if bot is not None and update is not None:
             if str(update.message.from_user.id) not in self.config['admin_list']:
                 update.message.reply_text("You don't have enough privileges!")
                 return
@@ -158,6 +158,7 @@ class Bot:
 
     def __upgrade_config(self):
         if os.path.exists("config.json") and not os.path.exists("config.yaml"):
+            import json
             print("Converting old config.json to config.yaml")
             with open('config.json', 'r') as json_config:
                 with open('config.yaml', 'w') as yaml_config:
@@ -187,12 +188,12 @@ class Bot:
             if args[0] in self.plugin_list:
                 help_text = "<b>" + args[0] + "</b>"
                 for plugin in self.plugins:
-                    if plugin.__class__.__name__ == args[0]:     
+                    if plugin.__class__.__name__ == args[0]:
                         try:
                             help_text += ": " + plugin.description
                         except AttributeError:
                             help_text += ": No description available."
-                        try: 
+                        try:
                             help_text += "\n\n" + plugin.help_text
                         except AttributeError:
                             help_text += "\n\nNo help text available."
@@ -209,7 +210,7 @@ class Bot:
         self.updater.dispatcher.add_handler(CommandHandler('restart', self.__restart))
         self.updater.dispatcher.add_handler(CommandHandler('enable', self.__enable_plugin, pass_args=True))
         self.updater.dispatcher.add_handler(CommandHandler('disable', self.__disable_plugin, pass_args=True))
-        
+
         # Add the plugins folder to the path list for module lookups
         sys.path.insert(0, './plugins')
 
@@ -226,7 +227,7 @@ class Bot:
         for plugin in self.plugins:
             plugin.config = self.config['plugin_settings'][plugin.__class__.__name__]
             plugin.admin_list = self.config['admin_list']
-            
+
         for plugin in self.plugins:
             try:
                 plugin.on_load()
@@ -267,8 +268,8 @@ class Bot:
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG,
-                    # format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-                    format='%(name)s - %(levelname)s - %(message)s')
+                        # format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+                        format='%(name)s - %(levelname)s - %(message)s')
     bot = Bot()
     bot.start()
     bot.stop()

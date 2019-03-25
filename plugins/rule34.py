@@ -1,5 +1,6 @@
 import urllib.parse, re, requests
 
+
 class rule34():
     def __init__(self):
         self.commands = {
@@ -21,7 +22,7 @@ class rule34():
         data = req.text
         imgurlarr = re.findall(r'file_url="(?:https?:)?(\/\/img\.rule34\.xxx\/images\/\d+\/[0-9a-f]+\.\w+)"', data, re.I)
 
-        if imgurlarr == None or len(imgurlarr) == 0:
+        if imgurlarr is None or len(imgurlarr) == 0:
             update.message.reply_text(text="No results found", quote=True)
         else:
             update.message.reply_photo(photo=f"https:{imgurlarr[0]}", quote=True)
