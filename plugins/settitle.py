@@ -15,7 +15,5 @@ class settitle():
         if update.message.from_user.id not in get_admin_ids(bot, update.message.chat_id)+self.admin_list:
             update.message.reply_text("You don't have enough privileges!")
             return
-
-        update.message.reply_text("I'm still a work-in-progress.")
-
-
+        
+        bot.setChatTitle(chat_id=update.message.chat_id, title=" ".join(args))

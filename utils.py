@@ -1,9 +1,9 @@
-import threading, json, yaml
+import threading, json, yaml, logging
 
 
 # Pretty-prints a string with equal signs
 def pprint(s):
-    print(f"{'='*len(s)}\n{s}\n{'='*len(s)}")
+    logging.info(f"{'='*len(s)}\n{s}\n{'='*len(s)}")
 
 
 def generate_config_file():

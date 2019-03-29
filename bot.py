@@ -20,7 +20,7 @@ class Bot:
                 self.config = yaml.safe_load(f)
         except IOError:
             utils.generate_config_file()
-            print('Configuration file (config.yaml) not found. Sample file has been created.')
+            logging.warn('Configuration file (config.yaml) not found. Sample file has been created.')
 
         # Check and load the settings file
         if self.__validate_and_load_config() != 0:
@@ -35,16 +35,15 @@ class Bot:
         for plugin in self.plugins:
             try:
                 plugin_name = plugin.__class__.__name__
-                print(f'saving settings for {plugin_name}')
+                logging.info(f'saving settings for {plugin_name}')
                 self.config['plugin_settings'][plugin_name] = plugin.config
             except AttributeError:
-                print(f'wtf? No plugin.config for {plugin.__class__.__name__}')
+                logging.error(f'wtf? No plugin.config for {plugin.__class__.__name__}')
         self.__save_config()
 
 
     # This method saves the config (self.config) to file (config.json)
     def __save_config(self):
-        # print(self.config)
         with open('config.yaml', 'w') as file:
             yaml.dump(self.config, file)
             # json.dump(self.config, file, indent=4, sort_keys=True)
@@ -135,7 +134,7 @@ class Bot:
                 update.message.reply_text("You don't have enough privileges!")
                 return
             update.message.reply_text("Stopping bot.")
-            print('stopping bot.')
+            logging.info('stopping bot.')
         self.updater.stop()
 
 
@@ -159,10 +158,12 @@ class Bot:
     def __upgrade_config(self):
         if os.path.exists("config.json") and not os.path.exists("config.yaml"):
             import json
-            print("Converting old config.json to config.yaml")
+            logging.info('Converting config.json to config.yaml...')
             with open('config.json', 'r') as json_config:
                 with open('config.yaml', 'w') as yaml_config:
                     yaml.dump(json.load(json_config), yaml_config)
+            logging.info('Removing config.json...')
+            os.remove('config.json')
 
 
     def __print_help(self, bot, update, args):
@@ -216,7 +217,7 @@ class Bot:
 
         # Initialize plugins
         for plugin in self.plugin_list:
-            print(f'hey! now loading: {plugin}')
+            logging.info(f'now loading: {plugin}')
             p = getattr(importlib.import_module(plugin, "plugins"), plugin)()
             self.plugins.append(p)
 
@@ -242,7 +243,7 @@ class Bot:
         forbidden_commands = ["stop", "help", "enable", "disable", "info", "restart"]
         for plugin in self.plugins:
             for command, function in plugin.commands.items():
-                print(command, function)
+                # print(command, function)
                 if command not in forbidden_commands:
                     self.updater.dispatcher.add_handler(
                         CommandHandler(command, function, pass_args=True))
@@ -257,11 +258,11 @@ class Bot:
     def __on_text(self, bot, update):
         for plugin in self.plugins:
             try:
-                print(f"calling on_text for: {plugin}")
+                logging.info(f"calling on_text for: {plugin}")
                 plugin.on_text(bot, update)
             except Exception:
-                print("Oops.")
-        print('finished execution of __on_text')
+                logging.warn(f'Plugin {plugin} has no on_text')
+        logging.debug('finished execution of __on_text')
 
 
 

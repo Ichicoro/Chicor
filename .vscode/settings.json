@@ -1,6 +1,11 @@
 {
+    "python.linting.enabled": true,
     "python.linting.pylintEnabled": false,
     "python.linting.pep8Enabled": true,
-    "python.linting.enabled": true,
-    "python.pythonPath": "/usr/local/bin/python3"
+    "python.linting.pep8Args": [
+        "--ignore=E309,E121,E123,E126,E133,E220,E251,E401,E402,E501,E704,E191,E293,E391,E303,E122,E226,E201,E202"
+    ],
+    "python.pythonPath": "/usr/local/opt/python/bin/python3.7",
+    "workbench.colorCustomizations": {
+    }
 }
