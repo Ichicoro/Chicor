@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import importlib, sys, utils, logging, os, yaml
+import importlib, sys, utils, logging, os, yaml, datetime
 from utils import set_interval, get_admin_ids
 from threading import Thread
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
@@ -278,9 +278,38 @@ class Bot:
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG,
-                        # format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-                        format='%(name)s - %(levelname)s - %(message)s')
+    # Check if the logs directory exists and, if not, create it
+    directory = 'logs'
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+
+    current_time = str(format(datetime.datetime.now(), "%Y-%m-%d_%H-%M-%S"))
+
+    # Setup the main logger
+    log = logging.getLogger('')
+    log.setLevel(logging.DEBUG)
+
+    # Setup the two handlers (stdout and file) for the logger
+    stdout_logger = logging.StreamHandler(sys.stdout)
+    file_logger = logging.FileHandler(f'logs/{current_time}.log')
+
+    # Setup the two formatters (stdout and file) for the loggers
+    stdout_formatter = logging.Formatter('[%(levelname)s]\t[%(name)s] %(message)s', "%Y-%m-%d %H:%M:%S")
+    file_formatter = logging.Formatter('[%(levelname)s]\t[%(asctime)s] [%(name)s] %(message)s', "%Y-%m-%d %H:%M:%S")
+
+    # Setup the logging level of the two handlers (stdout and file)
+    stdout_logger.setLevel(logging.DEBUG)
+    file_logger.setLevel(logging.ERROR)
+
+    # Actually apply the formatter to the loggers
+    stdout_logger.setFormatter(stdout_formatter)
+    file_logger.setFormatter(file_formatter)
+
+    # Finally, add the two handlers to the main logger so that they get called
+    log.addHandler(file_logger)
+    log.addHandler(stdout_logger)
+
+    # Start the bot
     bot = Bot()
     bot.start()
     bot.stop()

@@ -2,6 +2,9 @@
 config*.json
 config*.yaml
 
+# Logs
+logs/
+
 # Backups
 *.bak
 
