@@ -1,10 +1,14 @@
-from utils import get_admin_ids
+import utils
 import os
 
 class setphoto():
     def __init__(self):
+        self.config = {}
         self.commands = {
             'setphoto': self.photosetter
+        }
+        self.default_config = {
+            'require_admin_privileges': True
         }
         self.description = "Photo-setting, man."
         self.help_text = "Write /setphoto on a photo to set it as the chat photo! <i>Admin only</i>"
@@ -23,7 +27,7 @@ class setphoto():
             update.message.reply_text("The message you replied to doesn't contain a photo!")
             return
 
-        if update.message.from_user.id not in get_admin_ids(bot, update.message.chat_id)+self.admin_list:
+        if self.config['require_admin_privileges'] and not is_chat_admin(bot, update.message.chat_id):
             update.message.reply_text("You don't have enough privileges!")
             return
 

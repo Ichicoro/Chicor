@@ -9,7 +9,7 @@ def pprint(s):
 def generate_config_file():
     sample_settings = {
         "TELEGRAM_API_TOKEN": "",
-        "plugin_list": [ "hello_plugin", "rule34", "lyrics" ],
+        "plugin_list": [ "hello_plugin", "rule34", "lyrics", "settitle", "setphoto", "google_tts" ],
         "admin_list": [],
         "plugin_settings": []
     }
@@ -46,3 +46,11 @@ def set_interval(interval, times = -1):
 def get_admin_ids(bot, chat_id):
     """Returns a list of admin IDs for a given chat. Results are cached for 1 hour."""
     return [admin.user.id for admin in bot.get_chat_administrators(chat_id)]
+
+
+def is_bot_admin(bot, chat_id, admin_list):
+    return update.message.from_user.id in get_admin_ids(bot, update.message.chat_id)+self.admin_list
+
+
+def is_chat_admin(bot, chat_id):
+    return is_admin(bot, chat_id, None)

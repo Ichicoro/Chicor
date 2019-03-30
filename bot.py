@@ -20,7 +20,7 @@ class Bot:
                 self.config = yaml.safe_load(f)
         except IOError:
             utils.generate_config_file()
-            logging.warn('Configuration file (config.yaml) not found. Sample file has been created.')
+            logging.info('Configuration file (config.yaml) not found. Sample file has been created.')
 
         # Check and load the settings file
         if self.__validate_and_load_config() != 0:
@@ -62,7 +62,7 @@ class Bot:
         try:
             self.updater = Updater(self.config['TELEGRAM_API_TOKEN'],
                                    user_sig_handler=self.__emergency_stop)
-        except Exception:
+        except ValueError:
             utils.pprint('Missing API token! Write it in the config.json file')
             return -1
         try:
@@ -228,6 +228,16 @@ class Bot:
         for plugin in self.plugins:
             plugin.config = self.config['plugin_settings'][plugin.__class__.__name__]
             plugin.admin_list = self.config['admin_list']
+
+        # Add new keys to the plugin configs
+        for plugin in self.plugins:
+            try:
+                default_values = plugin.default_config
+            except AttributeError:
+                default_values = {}
+            for (key, value) in default_values.items():
+                if key not in plugin.config:
+                    plugin.config[key] = value
 
         for plugin in self.plugins:
             try:

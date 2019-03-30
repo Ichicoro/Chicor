@@ -2,6 +2,9 @@
 config*.json
 config*.yaml
 
+# Backups
+*.bak
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
