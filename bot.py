@@ -299,7 +299,7 @@ if __name__ == '__main__':
 
     # Setup the logging level of the two handlers (stdout and file)
     stdout_logger.setLevel(logging.DEBUG)
-    file_logger.setLevel(logging.ERROR)
+    file_logger.setLevel(logging.INFO)
 
     # Actually apply the formatter to the loggers
     stdout_logger.setFormatter(stdout_formatter)
