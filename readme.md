@@ -33,7 +33,7 @@ class plugin_name():
         update.message.reply_text("Hello?")
 
 
-    def handler1(self, bot, update, args):
+    def handler2(self, bot, update, args):
         update.message.reply_text("Hello!")
 
 
